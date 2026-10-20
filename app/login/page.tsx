@@ -195,7 +195,7 @@ export default async function LoginPage({
             </p>
             <DemoButtons />
             <p className="mt-4 text-[13px] text-faint">
-              No sign-up needed. Demo data is shared by every visitor and is reset regularly.
+              No sign-up needed. Demo data is shared by every visitor, so you may see changes others have made.
             </p>
           </section>
         </div>

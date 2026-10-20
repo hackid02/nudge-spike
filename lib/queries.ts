@@ -39,6 +39,8 @@ export type InvoiceRow = {
   client_name: string
   client_business: string
   total_cents: number
+  /** only set by getClientInvoice: who sent it */
+  freelancer_name?: string | null
 }
 
 export type InvoiceDetail = InvoiceRow & {
@@ -238,9 +240,11 @@ export async function getClientInvoice(
            i.viewed_at::text, i.paid_at::text, i.notes,
            u.business_name as client_name,
            u.business_name as client_business,
+           f.name          as freelancer_name,
            0 as total_cents
       from invoices i
       join users u on u.id = i.client_id
+      join users f on f.id = i.freelancer_id
      where i.id = ${invoiceId}
        and i.client_id = ${clientId}
        and i.status <> 'draft'
