@@ -1,7 +1,9 @@
 import Link from 'next/link'
-import { CircleCheck, Clock, FileText, LayoutDashboard, LogOut, PenLine, ShieldCheck, TriangleAlert } from 'lucide-react'
+import { CircleCheck, Clock, FileText, LayoutDashboard, LogOut, PenLine, ShieldCheck, TriangleAlert, UserRound } from 'lucide-react'
 import { messages, displayStatus, statusLabel } from '@/lib/messages'
 import { initials } from './format'
+import { LogoMark } from './Logo'
+import { ThemeToggle } from './ThemeToggle'
 
 /**
  * Status tag. The LABEL text is asserted by the suite (lib/messages.ts) —
@@ -30,19 +32,12 @@ export function StatusPill({ status, dueOn }: { status: string; dueOn: string })
   )
 }
 
-/** Logo mark + wordmark. Typographic, no image fetch. */
+/** Logo mark + wordmark. Pure SVG, no image fetch. */
 export function Wordmark({ inverted = false }: { inverted?: boolean }) {
   return (
     <span className="flex items-center gap-2.5">
-      <span
-        aria-hidden="true"
-        className="grid h-7 w-7 place-items-center rounded-lg bg-accent text-[13px] font-semibold leading-none text-white shadow-[inset_0_-2px_0_rgb(0_0_0/0.15)]"
-      >
-        N
-      </span>
-      <span className={`text-base font-semibold tracking-tight ${inverted ? 'text-white' : 'text-ink'}`}>
-        Nudge
-      </span>
+      <LogoMark size={28} />
+      <span className={`text-[17px] font-semibold tracking-tight ${inverted ? 'text-white' : 'text-ink'}`}>Nudge</span>
     </span>
   )
 }
@@ -111,7 +106,7 @@ export function Breadcrumb({ items }: { items: { label: string; href?: string }[
   )
 }
 
-type NavKey = 'all' | 'open' | 'overdue' | 'draft' | 'paid' | 'portal'
+type NavKey = 'all' | 'open' | 'overdue' | 'draft' | 'paid' | 'portal' | 'account'
 
 const NAV: Record<'freelancer' | 'client', { key: NavKey; label: string; href: string; icon: typeof FileText }[]> = {
   freelancer: [
@@ -120,8 +115,12 @@ const NAV: Record<'freelancer' | 'client', { key: NavKey; label: string; href: s
     { key: 'overdue', label: 'Needs attention', href: '/?status=overdue', icon: TriangleAlert },
     { key: 'draft', label: 'Drafts', href: '/?status=draft', icon: PenLine },
     { key: 'paid', label: 'Collected', href: '/?status=paid', icon: CircleCheck },
+    { key: 'account', label: 'Account', href: '/account', icon: UserRound },
   ],
-  client: [{ key: 'portal', label: 'Your invoices', href: '/portal', icon: FileText }],
+  client: [
+    { key: 'portal', label: 'Your invoices', href: '/portal', icon: FileText },
+    { key: 'account', label: 'Account', href: '/account', icon: UserRound },
+  ],
 }
 
 /**
@@ -142,7 +141,7 @@ export function AppShell({
 }) {
   return (
     <div className="min-h-screen">
-      <aside className="fixed inset-y-0 left-0 z-20 hidden w-64 flex-col overflow-hidden bg-sidebar lg:flex">
+      <aside className="fixed inset-y-0 left-0 z-20 hidden w-64 flex-col overflow-hidden border-r border-white/5 bg-sidebar lg:flex">
         <div
           aria-hidden="true"
           className="pointer-events-none absolute -left-24 -top-24 h-80 w-80 rounded-full bg-[radial-gradient(circle,rgb(36_83_230/0.35),transparent_70%)]"
@@ -222,12 +221,17 @@ export function SignedInHeader({
           </span>
         </div>
         <div className="flex min-w-0 items-center gap-2 sm:gap-3">
-          <div className="flex min-w-0 items-center gap-2.5">
+          <ThemeToggle />
+          <Link
+            href="/account"
+            title="Your account"
+            className="flex min-w-0 items-center gap-2.5 rounded-lg px-1.5 py-1 transition-colors duration-150 hover:bg-inset"
+          >
             <span className="hidden sm:block"><Avatar name={name} /></span>
             <span className="truncate whitespace-nowrap text-sm font-medium text-ink" data-testid="signed-in-name">
               {name}
             </span>
-          </div>
+          </Link>
           <span className="mx-1 hidden h-5 w-px bg-line sm:block" aria-hidden="true" />
           <form action="/api/logout" method="post">
             <button className="inline-flex items-center gap-1.5 whitespace-nowrap rounded-lg px-2.5 py-1.5 text-sm font-medium text-muted transition-colors duration-150 hover:bg-inset hover:text-ink">
@@ -257,7 +261,7 @@ export function AmountHero({
   late?: boolean
 }) {
   return (
-    <section className="relative overflow-hidden rounded-2xl bg-sidebar p-5 text-white shadow-raised">
+    <section className="relative overflow-hidden rounded-2xl bg-sidebar p-5 text-white shadow-raised ring-1 ring-white/5">
       <div
         aria-hidden="true"
         className="pointer-events-none absolute -right-20 -top-24 h-64 w-64 rounded-full bg-[radial-gradient(circle,rgb(36_83_230/0.55),transparent_68%)]"

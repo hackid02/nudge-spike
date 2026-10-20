@@ -135,7 +135,7 @@ export default async function DashboardPage({
           {/* Hero balance card: the one place glass is used — over a dark, glowing surface */}
           <section
             aria-label="Balances"
-            className="relative overflow-hidden rounded-2xl bg-sidebar p-5 text-white shadow-raised sm:p-6 lg:col-span-2"
+            className="relative overflow-hidden rounded-2xl bg-sidebar p-5 text-white shadow-raised ring-1 ring-white/5 sm:p-6 lg:col-span-2"
           >
             <div
               aria-hidden="true"

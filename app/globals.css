@@ -43,8 +43,85 @@
   --font-mono: var(--font-geist-mono), ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
 }
 
+/* Dark mode is class-based (html.dark), set before paint by app/layout.tsx */
+@custom-variant dark (&:where(.dark, .dark *));
+
 html {
   -webkit-text-size-adjust: 100%;
+  color-scheme: light;
+}
+
+/*
+ * Dark theme = the same tokens, redefined. Every component uses tokens
+ * (bg-card, text-ink, border-line …), so this block re-themes the whole app.
+ * Surfaces that are always dark (sidebar, hero cards) are unchanged.
+ */
+html.dark {
+  color-scheme: dark;
+  --color-canvas: #0a0d14;
+  --color-card: #111622;
+  --color-panel: #151b28;
+  --color-inset: #1c2433;
+
+  --color-ink: #f2f4f7;
+  --color-body: #cdd4df;
+  --color-muted: #98a2b3;
+  --color-faint: #6b7588;
+
+  --color-line: #222a39;
+  --color-line-strong: #323c4f;
+
+  --color-accent: #6b8dff;
+  --color-accent-strong: #8ea8ff;
+  --color-accent-soft: rgb(91 130 255 / 0.15);
+
+  --color-success: #4ade80;
+  --color-success-soft: rgb(74 222 128 / 0.12);
+  --color-danger: #fb7a6e;
+  --color-danger-soft: rgb(251 122 110 / 0.13);
+  --color-warning: #fbbf24;
+  --color-warning-soft: rgb(251 191 36 / 0.12);
+
+  --color-sidebar: #06080d;
+
+  --shadow-card: 0 1px 2px 0 rgb(0 0 0 / 0.4);
+  --shadow-raised: 0 8px 24px -8px rgb(0 0 0 / 0.6);
+}
+
+/* Gentle float for the sign-in illustration (decorative only) */
+@keyframes nudge-float {
+  0%,
+  100% {
+    transform: translate3d(0, 0, 0);
+  }
+  50% {
+    transform: translate3d(0, -10px, 0);
+  }
+}
+@keyframes nudge-bob {
+  0%,
+  100% {
+    transform: translate3d(0, 0, 0);
+  }
+  50% {
+    transform: translate3d(0, -6px, 0);
+  }
+}
+.animate-float {
+  animation: nudge-float 7s ease-in-out infinite;
+}
+.animate-bob {
+  animation: nudge-bob 5s ease-in-out infinite;
+}
+.animate-bob-late {
+  animation: nudge-bob 5s ease-in-out 1.6s infinite;
+}
+@media (prefers-reduced-motion: reduce) {
+  .animate-float,
+  .animate-bob,
+  .animate-bob-late {
+    animation: none;
+  }
 }
 
 /* Visible focus everywhere, keyboard only. */

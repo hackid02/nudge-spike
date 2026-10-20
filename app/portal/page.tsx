@@ -58,7 +58,7 @@ export default async function PortalPage() {
         {invoices.length > 0 ? (
           <section
             aria-label="Balances"
-            className="relative mt-6 overflow-hidden rounded-2xl bg-sidebar p-5 text-white shadow-raised sm:p-6"
+            className="relative mt-6 overflow-hidden rounded-2xl bg-sidebar p-5 text-white shadow-raised ring-1 ring-white/5 sm:p-6"
           >
             <div
               aria-hidden="true"
