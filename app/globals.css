@@ -1,26 +1,65 @@
 @import "tailwindcss";
 
-:root {
-  --background: #ffffff;
-  --foreground: #171717;
+/*
+ * Nudge design tokens (design-skills/corporate-trust, adapted for product UI).
+ * Grey canvas, white cards, ink text, ONE accent; status colours for status only.
+ * Use these utilities (bg-canvas, bg-card, text-ink, border-line, text-accent …)
+ * instead of raw palette colours so the app stays on one system.
+ */
+@theme {
+  --color-canvas: #f6f7f9;
+  --color-card: #ffffff;
+  --color-panel: #f9fafb;
+  --color-inset: #f2f4f7;
+
+  --color-ink: #101828;
+  --color-body: #344054;
+  --color-muted: #667085;
+  --color-faint: #98a2b3;
+
+  --color-line: #e4e7ec;
+  --color-line-strong: #d0d5dd;
+
+  --color-accent: #2453e6;
+  --color-accent-strong: #1c44c4;
+  --color-accent-soft: #eef3ff;
+
+  --color-success: #067647;
+  --color-success-soft: #ecfdf3;
+  --color-danger: #c4320a;
+  --color-danger-soft: #fef3f2;
+  --color-warning: #b54708;
+  --color-warning-soft: #fffaeb;
+
+  --color-sidebar: #0c111d;
+
+  --shadow-card: 0 1px 2px 0 rgb(16 24 40 / 0.05);
+  --shadow-raised: 0 4px 8px -2px rgb(16 24 40 / 0.08), 0 2px 4px -2px rgb(16 24 40 / 0.04);
 }
 
+/* next/font (geist) provides --font-geist-sans/mono at runtime */
 @theme inline {
-  --color-background: var(--background);
-  --color-foreground: var(--foreground);
-  --font-sans: var(--font-geist-sans);
-  --font-mono: var(--font-geist-mono);
+  --font-sans: var(--font-geist-sans), ui-sans-serif, system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
+  --font-mono: var(--font-geist-mono), ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
 }
 
-@media (prefers-color-scheme: dark) {
-  :root {
-    --background: #0a0a0a;
-    --foreground: #ededed;
+html {
+  -webkit-text-size-adjust: 100%;
+}
+
+/* Visible focus everywhere, keyboard only. */
+:focus-visible {
+  outline: 2px solid var(--color-accent);
+  outline-offset: 2px;
+  border-radius: 6px;
+}
+
+/* The app has no motion, but respect the setting for anything a browser adds. */
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    transition-duration: 0.01ms !important;
+    animation-duration: 0.01ms !important;
   }
-}
-
-body {
-  background: var(--background);
-  color: var(--foreground);
-  font-family: Arial, Helvetica, sans-serif;
 }
