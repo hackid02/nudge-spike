@@ -6,10 +6,18 @@
     "dev": "next dev",
     "build": "next build",
     "start": "next start",
-    "lint": "eslint"
+    "lint": "eslint",
+    "db:reset": "node scripts/apply-schema.mjs && node scripts/seed.mjs",
+    "db:seed": "node scripts/seed.mjs",
+    "vercel-build": "node scripts/preview-reset.mjs && next build"
   },
   "dependencies": {
+    "geist": "1.7.2",
+    "install": "^0.13.0",
+    "lucide-react": "1.49.0",
     "next": "16.4.2",
+    "npm": "^12.2.0",
+    "postgres": "^3.4.9",
     "react": "19.3.0",
     "react-dom": "19.3.0"
   },
