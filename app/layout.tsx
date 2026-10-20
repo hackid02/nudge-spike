@@ -9,13 +9,21 @@ export const metadata: Metadata = {
     'Freelancers give each client a private login that shows only their own invoices.',
 }
 
+/*
+ * Runs before first paint: applies the saved theme, or the system setting when
+ * nothing is saved, so dark-mode users never see a white flash.
+ */
+const themeScript = `(function(){try{var t=localStorage.getItem('theme');var d=t?t==='dark':window.matchMedia('(prefers-color-scheme: dark)').matches;var r=document.documentElement;if(d)r.classList.add('dark');r.style.colorScheme=d?'dark':'light'}catch(e){}})()`
+
 export default function RootLayout({ children }: { children: React.ReactNode }) {
   return (
-    // Geist ships inside the npm package (no network fetch at build time)
-    <html lang="en" className={`${GeistSans.variable} ${GeistMono.variable}`}>
-      <body className="min-h-screen bg-canvas font-sans text-sm text-body antialiased">
-        {children}
-      </body>
+    // Geist ships inside the npm package (no network fetch at build time).
+    // suppressHydrationWarning: the theme script may add class="dark" before React hydrates.
+    <html lang="en" className={`${GeistSans.variable} ${GeistMono.variable}`} suppressHydrationWarning>
+      <head>
+        <script dangerouslySetInnerHTML={{ __html: themeScript }} />
+      </head>
+      <body className="min-h-screen bg-canvas font-sans text-sm text-body antialiased">{children}</body>
     </html>
   )
 }

@@ -1,9 +1,11 @@
 import { CircleCheck, Eye } from 'lucide-react'
 
 /**
- * Static 3D illustration: a fanned stack of invoices with a "client opened it"
- * notification floating in front. Pure CSS transforms — no WebGL, no animation —
- * so it costs nothing to render and never moves under a test's cursor.
+ * 3D illustration: a fanned stack of invoices with "client opened it" / "paid"
+ * notifications floating in front. Pure CSS transforms — no WebGL. It drifts
+ * gently (globals.css: animate-float / animate-bob) and stops completely for
+ * users who prefer reduced motion. It is aria-hidden and pointer-events-none,
+ * so it can never intercept a click or a test's cursor.
  *
  * Uses invented numbers (INV-0042 etc.) on purpose: no seeded invoice id or
  * amount may appear on the sign-in page, so isolation tests that assert the
@@ -11,7 +13,7 @@ import { CircleCheck, Eye } from 'lucide-react'
  */
 export function InvoiceStack3D({ compact = false }: { compact?: boolean }) {
   const scene = (
-    <div aria-hidden="true" className="pointer-events-none relative h-[400px] w-[480px] select-none" style={{ perspective: '1400px' }}>
+    <div aria-hidden="true" className="animate-float pointer-events-none relative h-[400px] w-[480px] select-none" style={{ perspective: '1400px' }}>
       <div
         className="absolute inset-0"
         style={{ transformStyle: 'preserve-3d', transform: 'rotateX(22deg) rotateY(-24deg) rotateZ(6deg)' }}
@@ -64,10 +66,8 @@ export function InvoiceStack3D({ compact = false }: { compact?: boolean }) {
         </div>
 
         {/* floating notifications, lifted towards the viewer */}
-        <div
-          className="absolute left-[262px] top-[-18px] flex w-[220px] items-center gap-2.5 rounded-xl border border-white/20 bg-white/10 px-3 py-2.5 shadow-[0_24px_48px_-12px_rgb(0_0_0/0.6),inset_0_1px_0_rgb(255_255_255/0.15)] backdrop-blur-xl"
-          style={{ transform: 'translateZ(90px)' }}
-        >
+        <div className="absolute left-[262px] top-[-18px] w-[220px]" style={{ transform: 'translateZ(90px)' }}>
+          <div className="animate-bob flex items-center gap-2.5 rounded-xl border border-white/20 bg-white/10 px-3 py-2.5 shadow-[0_24px_48px_-12px_rgb(0_0_0/0.6),inset_0_1px_0_rgb(255_255_255/0.15)] backdrop-blur-xl">
           <span className="grid h-7 w-7 shrink-0 place-items-center rounded-full bg-[#2453e6]/25 text-[#9db4ff]">
             <Eye className="h-3.5 w-3.5" />
           </span>
@@ -76,10 +76,9 @@ export function InvoiceStack3D({ compact = false }: { compact?: boolean }) {
             <p className="text-white/50">2 minutes ago</p>
           </div>
         </div>
-        <div
-          className="absolute left-[150px] top-[338px] flex w-[210px] items-center gap-2.5 rounded-xl border border-white/20 bg-white/10 px-3 py-2.5 shadow-[0_24px_48px_-12px_rgb(0_0_0/0.6),inset_0_1px_0_rgb(255_255_255/0.15)] backdrop-blur-xl"
-          style={{ transform: 'translateZ(60px)' }}
-        >
+        </div>
+        <div className="absolute left-[150px] top-[338px] w-[210px]" style={{ transform: 'translateZ(60px)' }}>
+          <div className="animate-bob-late flex items-center gap-2.5 rounded-xl border border-white/20 bg-white/10 px-3 py-2.5 shadow-[0_24px_48px_-12px_rgb(0_0_0/0.6),inset_0_1px_0_rgb(255_255_255/0.15)] backdrop-blur-xl">
           <span className="grid h-7 w-7 shrink-0 place-items-center rounded-full bg-[#067647]/30 text-[#7ee2a8]">
             <CircleCheck className="h-3.5 w-3.5" />
           </span>
@@ -87,6 +86,7 @@ export function InvoiceStack3D({ compact = false }: { compact?: boolean }) {
             <p className="font-medium text-white">Studio Kiln paid</p>
             <p className="text-white/50">$1,150.00 · today</p>
           </div>
+        </div>
         </div>
       </div>
     </div>

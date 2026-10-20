@@ -15,6 +15,16 @@
 import { sql } from './db'
 import { computeTotals, type Item } from './money'
 
+/*
+ * Invoice total in SQL, matching lib/money.ts computeTotals EXACTLY:
+ *   subtotal = sum of per-line totals, each rounded half-up  (lineTotalCents)
+ *   total    = subtotal + subtotal * tax_rate_bp / 10000, rounded half-up (taxCents)
+ * Postgres round(numeric) rounds half away from zero, which is half-up for the
+ * non-negative amounts we store. Lists, tiles and the CSV export all use this,
+ * so every screen shows the same total as the invoice page (tax included).
+ */
+const SUBTOTAL = sql`coalesce(sum(round(ii.qty_milli * ii.unit_cents / 1000.0)), 0)`
+
 export type StoredStatus = 'draft' | 'sent' | 'viewed' | 'paid' | 'void'
 
 export type InvoiceRow = {
@@ -54,7 +64,7 @@ export async function listFreelancerInvoices(freelancerId: string): Promise<Invo
            i.notes,
            u.name            as client_name,
            u.business_name   as client_business,
-           coalesce(sum(round(ii.qty_milli * ii.unit_cents / 1000.0)), 0)::int as total_cents
+           (${SUBTOTAL} + round(${SUBTOTAL} * i.tax_rate_bp / 10000.0))::int as total_cents
       from invoices i
       join users u on u.id = i.client_id
       left join invoice_items ii on ii.invoice_id = i.id
@@ -113,7 +123,7 @@ export async function freelancerStats(freelancerId: string): Promise<Stats> {
   const [row] = await sql<Stats[]>`
     with totals as (
       select i.id, i.status, i.due_on,
-             coalesce(sum(round(ii.qty_milli * ii.unit_cents / 1000.0)), 0)::int as total_cents,
+             (${SUBTOTAL} + round(${SUBTOTAL} * i.tax_rate_bp / 10000.0))::int as total_cents,
              i.paid_at
         from invoices i
         left join invoice_items ii on ii.invoice_id = i.id
@@ -202,7 +212,7 @@ export async function listClientInvoices(clientId: string): Promise<InvoiceRow[]
            i.viewed_at::text, i.paid_at::text, i.notes,
            u.business_name as client_name,
            u.business_name as client_business,
-           coalesce(sum(round(ii.qty_milli * ii.unit_cents / 1000.0)), 0)::int as total_cents
+           (${SUBTOTAL} + round(${SUBTOTAL} * i.tax_rate_bp / 10000.0))::int as total_cents
       from invoices i
       join users u on u.id = i.client_id
       left join invoice_items ii on ii.invoice_id = i.id
@@ -278,7 +288,7 @@ export async function exportClientInvoices(clientId: string) {
     select i.id,
            i.due_on::text as due_on,
            i.status,
-           coalesce(sum(round(ii.qty_milli * ii.unit_cents / 1000.0)), 0)::int as total_cents
+           (${SUBTOTAL} + round(${SUBTOTAL} * i.tax_rate_bp / 10000.0))::int as total_cents
       from invoices i
       left join invoice_items ii on ii.invoice_id = i.id
      where i.client_id = ${clientId}
@@ -298,4 +308,49 @@ export async function findUserByEmail(email: string) {
      where email = ${email.toLowerCase().trim()}
   `
   return u ?? null
+}
+
+/* ------------------------------------------------------------------ *
+ * account (read-only)
+ * ------------------------------------------------------------------ */
+
+export type Account = {
+  id: string
+  email: string
+  name: string
+  role: 'freelancer' | 'client'
+  business_name: string
+  created_at: string
+  freelancer_name: string | null
+  freelancer_business: string | null
+  visible_invoices: number
+  client_names: string[]
+}
+
+/**
+ * The signed-in user's own row, plus a summary of what they are allowed to see.
+ * Scoped by `u.id = userId` (from the signed session) — never by a URL param —
+ * so there is no way to ask for someone else's account. The counts use the same
+ * predicates as the list queries: freelancers see their invoices, clients see
+ * non-draft invoices addressed to them.
+ */
+export async function getAccount(userId: string): Promise<Account | null> {
+  const [a] = await sql<Account[]>`
+    select u.id, u.email, u.name, u.role, u.business_name, u.created_at::text,
+           f.name          as freelancer_name,
+           f.business_name as freelancer_business,
+           case when u.role = 'freelancer'
+                then (select count(*) from invoices i where i.freelancer_id = u.id)
+                else (select count(*) from invoices i where i.client_id = u.id and i.status <> 'draft')
+           end::int as visible_invoices,
+           case when u.role = 'freelancer'
+                then coalesce((select array_agg(c.business_name order by c.business_name)
+                                 from users c where c.freelancer_id = u.id), '{}')
+                else '{}'::text[]
+           end as client_names
+      from users u
+      left join users f on f.id = u.freelancer_id
+     where u.id = ${userId}
+  `
+  return a ?? null
 }
