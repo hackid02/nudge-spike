@@ -48,8 +48,8 @@ export default async function PortalInvoicePage({
             <Card className="flex gap-3 p-5">
               <ShieldCheck aria-hidden="true" className="mt-0.5 h-5 w-5 shrink-0 text-success" />
               <p className="text-[13px] leading-5 text-muted">
-                This invoice is visible only to your account. Questions about this invoice? Reply to the email it
-                arrived with.
+                This invoice is visible only to your account. Questions about it? Contact{' '}
+                {invoice.freelancer_name ?? 'your freelancer'} directly.
               </p>
             </Card>
           </div>
