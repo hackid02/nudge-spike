@@ -1,0 +1,42 @@
+# Keeps the shared live demo clean during judging: reseeds it to the known
+# fixtures every night (02:00 UTC), or on demand from the Actions tab.
+# Only runs from main. Does nothing until the DEMO_DATABASE_URL secret is set.
+name: reseed-demo
+on:
+  schedule:
+    - cron: '0 2 * * *'
+  workflow_dispatch:
+permissions:
+  contents: read
+concurrency:
+  group: reseed-demo
+  cancel-in-progress: false
+jobs:
+  reseed:
+    if: github.ref == 'refs/heads/main'
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - name: Check the secret is configured
+        id: guard
+        env:
+          URL: ${{ secrets.DEMO_DATABASE_URL }}
+        run: |
+          if [ -z "$URL" ]; then
+            echo "::notice::DEMO_DATABASE_URL is not set; skipping reseed."
+            echo "skip=true" >> "$GITHUB_OUTPUT"
+          fi
+      - uses: actions/checkout@v4
+        if: steps.guard.outputs.skip != 'true'
+      - uses: actions/setup-node@v4
+        if: steps.guard.outputs.skip != 'true'
+        with:
+          node-version: 22
+      - name: Install the database driver only
+        if: steps.guard.outputs.skip != 'true'
+        run: npm install --no-save --no-package-lock postgres@3
+      - name: Reseed
+        if: steps.guard.outputs.skip != 'true'
+        env:
+          DATABASE_URL_UNPOOLED: ${{ secrets.DEMO_DATABASE_URL }}
+        run: node scripts/seed.mjs

@@ -3,7 +3,11 @@
 **Freelancers give each client a private login that shows only their own invoices — so you stop emailing PDFs and you can finally see who's opened one and who hasn't paid.**
 
 **Live:** https://nudge-spike.vercel.app
-**Every pull request is tested by TestSprite against its own Vercel preview, backed by its own freshly seeded Neon database branch — and the check holds the merge until it's green.**
+**Every pull request is tested by TestSprite against its own Vercel preview, backed by its own freshly seeded Neon database branch — and a failing check blocks the merge.** [PR #10](https://github.com/hackid02/nudge-spike/pull/10) proves it: a planted tenant leak turned the check red and GitHub refused to merge.
+
+[![Watch the 2-minute demo](docs/demo-poster.jpg)](docs/nudge-demo.mp4)
+
+**[▶ Watch the 2-minute demo](docs/nudge-demo.mp4)** — the live read receipt, a cross-client URL attack, and the TestSprite loop, with voice-over and captions.
 
 ## Try it
 
@@ -30,13 +34,24 @@ Also in the app: a live client-activity feed (the freelancer's dashboard updates
 ## How every PR is verified
 
 1. A PR opens → Vercel builds a preview deployment.
-2. The Neon–Vercel integration gives that preview **its own database branch** (`preview/<branch>`), and `scripts/preview-reset.mjs` reseeds it at build time. Concurrent PRs can't see each other's writes, and a run can never touch the live demo.
+2. The Neon–Vercel integration gives that preview **its own database branch** (`preview/<branch>`), and `scripts/preview-reset.mjs` reseeds it at build time. Concurrent PRs can't see each other's writes, and a PR run never touches the live demo. (Manual runs started from the TestSprite portal do target the live URL — which is why the demo is reseeded nightly; see *Keeping the live demo clean*.)
 3. When the deployment reports ready, the **TestSprite GitHub App** runs the suite against that preview and posts a **TestSprite V3** check plus a pass/fail comment on the PR.
-4. The check is **blocking**: a repository ruleset on `main` requires **TestSprite V3**, so the merge button stays disabled until it passes.
+4. The check is **blocking**: TestSprite's *Merge gate* reports any failed test as a failed **TestSprite V3** status, and a repository ruleset on `main` requires that status — so the merge button stays disabled until the suite passes.
+5. A second, credit-free layer runs on every PR too: the **unit-tests** GitHub Action (`npm test`, 21 money checks).
 
-**Evidence:** [PR #6](https://github.com/hackid02/nudge-spike/pull/6) — TestSprite comment *"All checks passed — 12 of 12 tests green"*, merged only after the required **TestSprite V3** check passed. [PR #8](https://github.com/hackid02/nudge-spike/pull/8) added three boundary tests and ran the full 15. Earlier: [PR #4](https://github.com/hackid02/nudge-spike/pull/4) — 11 of 11.
+**Evidence:**
 
-*Honest history:* PRs #1–#3 and #5 carry no TestSprite check — #1–#3 were merged while the suite and trigger were still being built, and #5 before the ruleset existed. The gate has been enforced on `main` since #6.
+| PR | What happened |
+|---|---|
+| [#10](https://github.com/hackid02/nudge-spike/pull/10) | **Planted regression, closed unmerged.** We deleted one line — `and i.client_id = ${clientId}` — so a client could open any invoice by URL. TestSprite failed *"Client A cannot access Client B invoice by URL"* (it saw Lumen Labs' INV-1002, $640.00), the required check went red (**14/15 passed · 1 failed**), and GitHub blocked the merge. |
+| [#8](https://github.com/hackid02/nudge-spike/pull/8) | Added three boundary tests; **15 of 15** green, merged after the required check passed. |
+| [#6](https://github.com/hackid02/nudge-spike/pull/6) | Wrong-password test; **12 of 12** green. Earlier: [#4](https://github.com/hackid02/nudge-spike/pull/4) — 11 of 11. |
+
+<img src="docs/pr10-merge-blocked.png" alt="PR #10: TestSprite V3 failing, marked Required, merge blocked" width="620">
+
+**Honest history — the gate wasn't fully on until PR #10.**
+- PRs #1–#3 and #5 carry no TestSprite check: #1–#3 were merged while the suite and trigger were still being built, #5 before the ruleset existed.
+- The ruleset has required **TestSprite V3** since #6, and #6–#9 were all green. But PR #10's *first* run exposed a gap: it reported **success — 14/15 passed · 1 failed**, because TestSprite's *Merge gate* toggle was off, so a failing test still produced a passing status. We switched the toggle on, re-ran (an empty commit, same code), and the check went red and blocked the merge. A gate you've never seen fail isn't a gate — that's why we planted the bug.
 
 ### The loop in action (what the suite caught)
 
@@ -96,6 +111,10 @@ node --env-file=.env scripts/seed.mjs
 npm run dev
 npm test                        # money maths: rounding, tax, formatting (21 checks)
 ```
+
+## Keeping the live demo clean
+
+The live demo is shared by every visitor (and by any manual TestSprite run), so its data drifts. The **reseed-demo** GitHub Action resets it to the known fixtures every night at 02:00 UTC, and can be run on demand from the Actions tab (*reseed-demo → Run workflow*). It only runs from `main`, and does nothing until the `DEMO_DATABASE_URL` repository secret is set.
 
 ```bash
 node scripts/check-isolation.mjs http://localhost:3000
