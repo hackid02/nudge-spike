@@ -21,6 +21,12 @@ Both clients belong to the *same* freelancer. That's the interesting case: cross
 
 Also in the app: a live client-activity feed (the freelancer's dashboard updates within seconds when a client opens or pays), dark mode, and a layout that works from 390px phones up.
 
+## Scope — what Nudge is and isn't (yet)
+
+**Built and tested:** the client portal (each client sees only their own invoices), read receipts (the freelancer sees when a client opens an invoice), the invoice lifecycle on existing invoices (send, record payment, void, delete), CSV export, and per-tenant isolation enforced in SQL.
+
+**Not built:** creating or editing invoices, inviting clients, email delivery and online payments. The demo runs on seeded invoices. We chose to spend the week making the isolation and lifecycle provably correct rather than adding forms we couldn't test properly.
+
 ## How every PR is verified
 
 1. A PR opens → Vercel builds a preview deployment.
@@ -28,7 +34,9 @@ Also in the app: a live client-activity feed (the freelancer's dashboard updates
 3. When the deployment reports ready, the **TestSprite GitHub App** runs the suite against that preview and posts a **TestSprite V3** check plus a pass/fail comment on the PR.
 4. The check is **blocking**: a repository ruleset on `main` requires **TestSprite V3**, so the merge button stays disabled until it passes.
 
-**Evidence:** [PR #4](https://github.com/hackid02/nudge-spike/pull/4) — `TestSprite V3 — All 11 tests passed`, alongside Vercel's checks.
+**Evidence:** [PR #6](https://github.com/hackid02/nudge-spike/pull/6) — TestSprite comment *"All checks passed — 12 of 12 tests green"*, merged only after the required **TestSprite V3** check passed. Earlier: [PR #4](https://github.com/hackid02/nudge-spike/pull/4) — 11 of 11.
+
+*Honest history:* PRs #1–#3 and #5 carry no TestSprite check — #1–#3 were merged while the suite and trigger were still being built, and #5 before the ruleset existed. The gate has been enforced on `main` since #6.
 
 ### The loop in action (what the suite caught)
 
@@ -79,10 +87,11 @@ Next.js (App Router) · Postgres on Neon · Tailwind v4 · Vercel preview deploy
 
 ```bash
 npm install
-cp .env.example .env            # DATABASE_URL, DATABASE_URL_UNPOOLED, SESSION_SECRET
+cp .env.example .env            # then fill in DATABASE_URL, DATABASE_URL_UNPOOLED, SESSION_SECRET
 node --env-file=.env scripts/apply-schema.mjs
 node --env-file=.env scripts/seed.mjs
 npm run dev
+npm test                        # money maths: rounding, tax, formatting (21 checks)
 ```
 
 ```bash
