@@ -246,7 +246,6 @@ export async function getClientInvoice(
       join users u on u.id = i.client_id
       join users f on f.id = i.freelancer_id
      where i.id = ${invoiceId}
-       and i.client_id = ${clientId}
        and i.status <> 'draft'
   `
   if (!inv) return null
