@@ -3,60 +3,84 @@
 **Freelancers give each client a private login that shows only their own invoices — so you stop emailing PDFs and you can finally see who's opened one and who hasn't paid.**
 
 **Live:** https://nudge-spike.vercel.app
-**Every pull request is tested by TestSprite against its own preview deployment, with its own database branch.**
+**Every pull request is tested by TestSprite against its own Vercel preview, backed by its own freshly seeded Neon database branch — and the check holds the merge until it's green.**
 
 ## Try it
 
-The login page has three one-click demo buttons — no credentials to type.
+The sign-in page has three one-click demo buttons — no credentials to type.
 
 | Sign in as | Sees |
 |---|---|
-| **Freelancer** | All of their invoices, and actions to send, record payment, void, delete |
+| **Freelancer** (Maya) | All of her invoices, with Send, Record payment, Void and Delete |
 | **Client A** (Northwind) | Only Northwind's invoices |
 | **Client B** (Lumen) | Only Lumen's invoices |
 
-Both clients belong to the *same* freelancer. That's the interesting case: cross-freelancer isolation is easy to remember, cross-client isolation within one freelancer is what real apps get wrong.
+Both clients belong to the *same* freelancer. That's the interesting case: cross-freelancer isolation is easy to remember; cross-client isolation within one freelancer is what real apps get wrong.
 
-**Try it:** sign in as Client A, then open `/portal/invoices/INV-1002` — that's Client B's invoice. The app returns not-found, and the page contains neither the invoice number nor its total.
+**Try it:** sign in as Client A, then open `/portal/invoices/INV-1002` — that's Client B's invoice. You get "Invoice not found.", and the page contains neither the invoice number nor its `$640.00` total. Then open **Account** (click your name) to see exactly what your login can see.
+
+Also in the app: a live client-activity feed (the freelancer's dashboard updates within seconds when a client opens or pays), dark mode, and a layout that works from 390px phones up.
+
+## How every PR is verified
+
+1. A PR opens → Vercel builds a preview deployment.
+2. The Neon–Vercel integration gives that preview **its own database branch** (`preview/<branch>`), and `scripts/preview-reset.mjs` reseeds it at build time. Concurrent PRs can't see each other's writes, and a run can never touch the live demo.
+3. When the deployment reports ready, the **TestSprite GitHub App** runs the suite against that preview and posts a **TestSprite V3** check plus a pass/fail comment on the PR.
+4. The check is **blocking**: the merge button stays disabled until it passes.
+
+**Evidence:** [PR #4](https://github.com/hackid02/nudge-spike/pull/4) — `TestSprite V3 — All 11 tests passed`, alongside Vercel's checks.
+
+### The loop in action (what the suite caught)
+
+In a portal run before PR #4, the test **"Maya can delete a draft invoice after confirming"** came back **Blocked**: Delete used the browser's native `window.confirm()`, and automated browsers auto-close native dialogs — so the cancel path could never be verified, by TestSprite or anyone else's harness.
+
+PR #4 replaced it with an in-page confirmation dialog (`components/ConfirmDelete.tsx`). On that PR's run the test passed, and with the full steps it now clicks **Cancel** (invoice stays) and then **Confirm** (invoice is removed) — 9 actions, no errors.
+
+Earlier portal runs also surfaced two real problems that we fixed rather than papered over: the seed script crashed before creating any of the six disposable invoices (so every mutating test had nothing to act on), and the "void refused on paid invoices" path was unreachable because the Void button was hidden. Several other failures turned out to be test-design problems (tests sharing the same invoice, an incorrect assumption about which invoices belong to which client); those were fixed in the suite, not by changing correct app behaviour.
 
 ## What the suite covers
 
-16 TestSprite tests across six areas, run automatically on every pull request:
+11 TestSprite tests, each signing in as the role it needs:
 
-1. **Authentication** — role-based landing, exact error text, signed-out redirects
-2. **Money invariants** — exact subtotal/tax/total, and two rounding traps that catch float and banker's-rounding implementations
-3. **Dashboard state** — derived Overdue status, ownership scoping
-4. **Lifecycle** — draft → sent → viewed → paid, void refused on paid invoices, confirm-to-delete
-5. **Client portal** — own invoices only, drafts invisible, no write actions
-6. **Tenant isolation** — five cases that fail if the backend trusts the frontend
+| Area | Test |
+|---|---|
+| Tenant isolation | Client A cannot access Client B invoice by URL |
+| | Client A cannot view draft invoice |
+| | Maya cannot access another freelancer invoice |
+| | Client A export shows only Northwind invoices |
+| Money | Maya sees correct invoice totals for INV-1001 (lines, subtotal $1,350.10, 5% tax $67.51, total $1,417.61 — on the detail page **and** the dashboard row) |
+| Lifecycle | Maya can send a draft invoice |
+| | Maya can record payment for a sent invoice |
+| | Maya cannot void a paid invoice (exact text: `Paid invoices can't be voided.`) |
+| | Maya can delete a draft invoice after confirming (Cancel keeps it, Confirm removes it) |
+| Read receipts | Client A opening an invoice marks it viewed for Maya |
+| Routing | Role routing sends each user to the correct area |
 
 Isolation cases assert the **absence of a specific value** (`INV-1002`, `$640.00`) rather than a generic "access denied", because a 200 with someone else's data on it passes a lazy assertion.
 
-Run behavior is deliberately non-default: **"Log in once per run" is OFF**, so each case authenticates as its own role. Left on, every isolation test would silently run as one user and prove nothing.
-
 ## How the tests stay honest
 
-- **Every pull request gets its own Neon database branch**, seeded at deploy time. A run can't see another run's writes, so a red check is always reproducible.
-- **Fixtures are immutable.** Invoices `INV-10xx` are never mutated by anything; only `INV-11xx` disposables change. No fixture is ever in a state that a read would transition.
+- **Each PR gets its own seeded database branch** (see above), so a red check is reproducible and never caused by another run.
+- **Fixtures are read-only.** Invoices `INV-10xx` are never changed by any test; each mutating test owns exactly one `INV-11xx` disposable.
 - **`viewed_at` is idempotent** — the update requires `status = 'sent'`, so re-opening a viewed invoice writes nothing.
-- **Seed dates are relative to `now()`**, so they never drift into Overdue during judging.
+- **Seed dates are relative to `now()`**, so fixtures never drift into Overdue during judging.
+- **Exact strings live in one file** (`lib/messages.ts`), so tests assert real text, not "an error appeared".
 
 ## Architecture
 
-Next.js (App Router) · Postgres on Neon · Tailwind · Vercel preview deployments.
+Next.js (App Router) · Postgres on Neon · Tailwind v4 · Vercel preview deployments · TestSprite.
 
-Three rules the code follows:
-
-- **Ownership lives in the SQL `WHERE` clause.** Never fetch-then-filter in JavaScript — one forgotten `if` is a data leak, and it makes the isolation tests meaningless.
-- **Money is integer cents.** Quantity is thousandths, tax is basis points, rounding is half-up per line then summed. No floats.
-- **One not-found page for every invisible row.** Another client's invoice, another tenant's invoice, your own draft, and a nonexistent id are indistinguishable — anything else confirms an invoice exists.
+- **Ownership lives in the SQL `WHERE` clause.** Never fetch-then-filter in JavaScript — one forgotten `if` is a data leak, and it would make the isolation tests meaningless.
+- **Money is integer cents.** Quantity is thousandths, tax is basis points, rounding is half-up per line and then on the tax. The SQL that totals lists and the CSV export uses the same rounding as `lib/money.ts`, so every screen shows the same total.
+- **One not-found page for every invisible row.** Another client's invoice, another tenant's invoice, your own draft as a client, and a nonexistent id are indistinguishable — anything else confirms an invoice exists.
 
 ## Run locally
 
 ```bash
 npm install
-cp .env.example .env      # DATABASE_URL, DATABASE_URL_UNPOOLED, SESSION_SECRET
-npm run db:reset          # schema + deterministic seed
+cp .env.example .env            # DATABASE_URL, DATABASE_URL_UNPOOLED, SESSION_SECRET
+node --env-file=.env scripts/apply-schema.mjs
+node --env-file=.env scripts/seed.mjs
 npm run dev
 ```
 
@@ -64,4 +88,4 @@ npm run dev
 node scripts/check-isolation.mjs http://localhost:3000
 ```
 
-`check-isolation.mjs` fires real HTTP requests at the five isolation boundaries — a two-second local loop that doesn't spend TestSprite credits.
+`check-isolation.mjs` fires real HTTP requests at the tenant boundaries (13 checks) — a two-second local loop that doesn't spend TestSprite credits, and tells us whether a red TestSprite case means the app is broken or the test is.

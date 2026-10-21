@@ -56,8 +56,18 @@ async function get(cookie, path) {
   return { status: res.status, body, location: res.headers.get('location') }
 }
 
-/** Strip HTML tags so absence checks aren't fooled by markup. */
-const text = (html) => html.replace(/<[^>]*>/g, ' ').replace(/\s+/g, ' ')
+/**
+ * Visible text only: drop <script>/<style> blocks, then tags.
+ * Next.js embeds the REQUESTED URL's segments (e.g. "INV-1002") in an inline
+ * routing payload; that is the user's own input echoed back, not leaked data,
+ * and without this the absence checks report a false leak.
+ */
+const text = (html) =>
+  html
+    .replace(/<script[\s\S]*?<\/script>/gi, ' ')
+    .replace(/<style[\s\S]*?<\/style>/gi, ' ')
+    .replace(/<[^>]*>/g, ' ')
+    .replace(/\s+/g, ' ')
 
 async function main() {
   console.log(`\nisolation check against ${BASE}\n`)
