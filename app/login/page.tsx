@@ -54,12 +54,6 @@ export default async function LoginPage({
           </Link>
           <nav aria-label="Site" className="flex items-center gap-1 sm:gap-2">
             <a
-              href="#demo"
-              className="hidden rounded-lg px-3 py-2 text-sm font-medium text-white/70 transition-colors duration-150 hover:bg-white/10 hover:text-white sm:inline-block"
-            >
-              Demo accounts
-            </a>
-            <a
               href={REPO}
               target="_blank"
               rel="noreferrer"
@@ -203,53 +197,27 @@ export default async function LoginPage({
 
       {/* ---------- Footer ---------- */}
       <footer className="mt-auto border-t border-line bg-card">
-        <div className="mx-auto flex max-w-6xl flex-col gap-8 px-4 py-10 sm:flex-row sm:justify-between sm:px-6">
-          <div className="max-w-xs">
+        <div className="mx-auto flex max-w-6xl flex-col gap-6 px-4 py-8 sm:flex-row sm:items-center sm:justify-between sm:px-6">
+          <div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:gap-4">
             <Wordmark />
-            <p className="mt-3 text-[13px] leading-relaxed text-muted">
-              Invoices with read receipts. Every client gets a private portal that shows only their own invoices.
-            </p>
+            <p className="text-[13px] text-muted">Invoices with read receipts for freelancers and their clients.</p>
           </div>
-          <div className="grid grid-cols-2 gap-10 text-[13px]">
-            <div>
-              <p className="font-semibold text-ink">Product</p>
-              <ul className="mt-3 space-y-2 text-muted">
-                <li>
-                  <a href="#signin" className="transition-colors duration-150 hover:text-ink">
-                    Live demo
-                  </a>
-                </li>
-                <li>
-                  <a href="#demo" className="transition-colors duration-150 hover:text-ink">
-                    Demo accounts
-                  </a>
-                </li>
-              </ul>
-            </div>
-            <div>
-              <p className="font-semibold text-ink">Project</p>
-              <ul className="mt-3 space-y-2 text-muted">
-                <li>
-                  <a href={REPO} target="_blank" rel="noreferrer" className="transition-colors duration-150 hover:text-ink">
-                    Source on GitHub
-                  </a>
-                </li>
-                <li>
-                  <a
-                    href={`${REPO}#readme`}
-                    target="_blank"
-                    rel="noreferrer"
-                    className="transition-colors duration-150 hover:text-ink"
-                  >
-                    How it&apos;s tested
-                  </a>
-                </li>
-              </ul>
-            </div>
-          </div>
+          <nav aria-label="Footer" className="flex items-center gap-6 text-[13px] text-muted">
+            <a href={REPO} target="_blank" rel="noreferrer" className="transition-colors duration-150 hover:text-ink">
+              Source code
+            </a>
+            <a
+              href={`${REPO}#how-every-pr-is-verified`}
+              target="_blank"
+              rel="noreferrer"
+              className="transition-colors duration-150 hover:text-ink"
+            >
+              How it&apos;s tested
+            </a>
+          </nav>
         </div>
         <div className="border-t border-line">
-          <div className="mx-auto flex max-w-6xl flex-col gap-2 px-4 py-5 text-xs text-faint sm:flex-row sm:items-center sm:justify-between sm:px-6">
+          <div className="mx-auto flex max-w-6xl flex-col gap-2 px-4 py-4 text-xs text-faint sm:flex-row sm:items-center sm:justify-between sm:px-6">
             <p>© 2026 Nudge</p>
             <p>Built for TestSprite Hackathon Season 4</p>
           </div>
