@@ -26,7 +26,7 @@ Also in the app: a live client-activity feed (the freelancer's dashboard updates
 1. A PR opens → Vercel builds a preview deployment.
 2. The Neon–Vercel integration gives that preview **its own database branch** (`preview/<branch>`), and `scripts/preview-reset.mjs` reseeds it at build time. Concurrent PRs can't see each other's writes, and a run can never touch the live demo.
 3. When the deployment reports ready, the **TestSprite GitHub App** runs the suite against that preview and posts a **TestSprite V3** check plus a pass/fail comment on the PR.
-4. The check is **blocking**: the merge button stays disabled until it passes.
+4. The check is **blocking**: a repository ruleset on `main` requires **TestSprite V3**, so the merge button stays disabled until it passes.
 
 **Evidence:** [PR #4](https://github.com/hackid02/nudge-spike/pull/4) — `TestSprite V3 — All 11 tests passed`, alongside Vercel's checks.
 
@@ -40,7 +40,7 @@ Earlier portal runs also surfaced two real problems that we fixed rather than pa
 
 ## What the suite covers
 
-11 TestSprite tests, each signing in as the role it needs:
+12 TestSprite tests, each signing in as the role it needs:
 
 | Area | Test |
 |---|---|
@@ -55,6 +55,7 @@ Earlier portal runs also surfaced two real problems that we fixed rather than pa
 | | Maya can delete a draft invoice after confirming (Cancel keeps it, Confirm removes it) |
 | Read receipts | Client A opening an invoice marks it viewed for Maya |
 | Routing | Role routing sends each user to the correct area |
+| Auth | Wrong password is rejected with an exact error (`Invalid email or password.`, no session created) |
 
 Isolation cases assert the **absence of a specific value** (`INV-1002`, `$640.00`) rather than a generic "access denied", because a 200 with someone else's data on it passes a lazy assertion.
 
