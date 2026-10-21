@@ -34,7 +34,7 @@ Also in the app: a live client-activity feed (the freelancer's dashboard updates
 3. When the deployment reports ready, the **TestSprite GitHub App** runs the suite against that preview and posts a **TestSprite V3** check plus a pass/fail comment on the PR.
 4. The check is **blocking**: a repository ruleset on `main` requires **TestSprite V3**, so the merge button stays disabled until it passes.
 
-**Evidence:** [PR #6](https://github.com/hackid02/nudge-spike/pull/6) — TestSprite comment *"All checks passed — 12 of 12 tests green"*, merged only after the required **TestSprite V3** check passed. Earlier: [PR #4](https://github.com/hackid02/nudge-spike/pull/4) — 11 of 11.
+**Evidence:** [PR #6](https://github.com/hackid02/nudge-spike/pull/6) — TestSprite comment *"All checks passed — 12 of 12 tests green"*, merged only after the required **TestSprite V3** check passed. [PR #8](https://github.com/hackid02/nudge-spike/pull/8) added three boundary tests and ran the full 15. Earlier: [PR #4](https://github.com/hackid02/nudge-spike/pull/4) — 11 of 11.
 
 *Honest history:* PRs #1–#3 and #5 carry no TestSprite check — #1–#3 were merged while the suite and trigger were still being built, and #5 before the ruleset existed. The gate has been enforced on `main` since #6.
 
@@ -48,7 +48,7 @@ Earlier portal runs also surfaced two real problems that we fixed rather than pa
 
 ## What the suite covers
 
-12 TestSprite tests, each signing in as the role it needs:
+15 TestSprite tests, each signing in as the role it needs:
 
 | Area | Test |
 |---|---|
@@ -56,6 +56,8 @@ Earlier portal runs also surfaced two real problems that we fixed rather than pa
 | | Client A cannot view draft invoice |
 | | Maya cannot access another freelancer invoice |
 | | Client A export shows only Northwind invoices |
+| | Client B export contains only Lumen invoices (no `INV-1001`, `INV-1004`, `INV-1007`) |
+| | A client opening a freelancer page (`/invoices/INV-1001`) is sent back to `/portal` |
 | Money | Maya sees correct invoice totals for INV-1001 (lines, subtotal $1,350.10, 5% tax $67.51, total $1,417.61 — on the detail page **and** the dashboard row) |
 | Lifecycle | Maya can send a draft invoice |
 | | Maya can record payment for a sent invoice |
@@ -64,6 +66,7 @@ Earlier portal runs also surfaced two real problems that we fixed rather than pa
 | Read receipts | Client A opening an invoice marks it viewed for Maya |
 | Routing | Role routing sends each user to the correct area |
 | Auth | Wrong password is rejected with an exact error (`Invalid email or password.`, no session created) |
+| | A signed-out visitor opening `/portal` or a portal invoice is sent to `/login`, with no invoice data shown |
 
 Isolation cases assert the **absence of a specific value** (`INV-1002`, `$640.00`) rather than a generic "access denied", because a 200 with someone else's data on it passes a lazy assertion.
 
