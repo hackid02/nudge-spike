@@ -1,7 +1,7 @@
 @import "tailwindcss";
 
 /*
- * Nudge design tokens (design-skills/corporate-trust, adapted for product UI).
+ * Nudge design tokens.
  * Grey canvas, white cards, ink text, ONE accent; status colours for status only.
  * Use these utilities (bg-canvas, bg-card, text-ink, border-line, text-accent …)
  * instead of raw palette colours so the app stays on one system.
